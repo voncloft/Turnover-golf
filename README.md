@@ -1,4 +1,4 @@
-# Turnover Golf 1.0.6
+# Turnover Golf 1.0.7
 
 A native C++/Qt 6 Widgets card game for KDE. Choose **1–4 total players, including you**. Play solo, against computers, or with a mix of online humans and computers.
 
@@ -72,6 +72,10 @@ The package recipe and source checksum are maintained in [Voncloft-OS-dev](https
 The repository includes the GNU General Public License, version 3. See [LICENSE](LICENSE).
 
 ## Changelog
+
+### 1.0.7
+
+The round-complete message now names the round winner and their score. After the final round, it names the overall winner using all round scores and shows your final total. Tied winners are all named, including online players. The scorecard leaves room for wrapped winner messages.
 
 ### 1.0.6
 

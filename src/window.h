@@ -51,6 +51,7 @@ private:
     void showRules();
     void showConnection();
     QString playerLabel(int player) const;
+    QString winnerMessage(bool match) const;
     int seatOrientation(int player) const;
     void clickCard(int i);
     void keyAction(int key);

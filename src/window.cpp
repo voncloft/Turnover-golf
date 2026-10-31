@@ -30,7 +30,7 @@ using namespace Golf;
 
 namespace {
 QLabel *label(const QString &text, const QString &name={}, QWidget *parent=nullptr) {
-    auto *l=new QLabel(text,parent); if(name=="lastMove" || name=="instruction" || name=="computerLabel" || name=="statusTitle")l->setTextFormat(Qt::PlainText); if(!name.isEmpty()) l->setObjectName(name); return l;
+    auto *l=new QLabel(text,parent); if(name=="lastMove" || name=="instruction" || name=="computerLabel" || name=="statusTitle" || name=="result")l->setTextFormat(Qt::PlainText); if(!name.isEmpty()) l->setObjectName(name); return l;
 }
 void clearLayout(QLayout *layout) {
     while(auto *item=layout->takeAt(0)) { if(item->widget()) delete item->widget(); if(item->layout()) clearLayout(item->layout()); delete item; }
@@ -111,7 +111,7 @@ void Window::buildUi() {
     auto *scroll=new QScrollArea; scroll->setWidgetResizable(true); scroll->setFrameShape(QFrame::NoFrame); scroll->setWidget(table); body->addWidget(scroll,1);
     auto *sidebar=new QWidget; sidebar->setObjectName("sidebar"); sidebar->setFixedWidth(304); auto *side=new QVBoxLayout(sidebar); side->setContentsMargins(17,16,17,16); side->setSpacing(13);
     side->addWidget(label("SCORECARD","sectionTitle")); totals=label("","totals"); totals->setWordWrap(true); side->addWidget(totals);
-    scoreTable=new QTableWidget; scoreTable->setObjectName("scores"); scoreTable->setEditTriggers(QAbstractItemView::NoEditTriggers); scoreTable->setSelectionMode(QAbstractItemView::NoSelection); scoreTable->setFocusPolicy(Qt::NoFocus); scoreTable->verticalHeader()->hide(); scoreTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); scoreTable->setShowGrid(false); scoreTable->setMinimumHeight(220); side->addWidget(scoreTable,1);
+    scoreTable=new QTableWidget; scoreTable->setObjectName("scores"); scoreTable->setEditTriggers(QAbstractItemView::NoEditTriggers); scoreTable->setSelectionMode(QAbstractItemView::NoSelection); scoreTable->setFocusPolicy(Qt::NoFocus); scoreTable->verticalHeader()->hide(); scoreTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); scoreTable->setShowGrid(false); scoreTable->setMinimumHeight(140); side->addWidget(scoreTable,1);
     result=label("","result"); result->setWordWrap(true); side->addWidget(result);
     side->addWidget(label("LAST PLAY","sectionTitle")); lastMove=label("","lastMove"); lastMove->setWordWrap(true); lastMove->setMinimumHeight(62); side->addWidget(lastMove);
     auto *quick=label("<b>Match top to bottom</b><br>Equal cards in a column = 0.<br>−5 cards always keep their value.<br><br><b>Matching bonuses</b><br>2 / 3 / 4 same-number pairs:<br>−10 / −15 / −20 bonus.<br><br><b>Four −5 cards in two pairs = −30.</b>","quickRules"); quick->setWordWrap(true); side->addWidget(quick);
@@ -153,6 +153,20 @@ void Window::buildUi() {
 QString Window::playerLabel(int p) const {
     if(p==net.localSeat())return "You";
     return net.online()?g.name(p):QString("CPU %1").arg(p);
+}
+QString Window::winnerMessage(bool match) const {
+    const auto &s=g.state();
+    if(s.scores.empty())return {};
+    QStringList winners;
+    int lowest=100000;
+    for(int p=0;p<g.players();++p) {
+        int points=match?g.total(p):s.scores.back()[p];
+        if(points<lowest){lowest=points;winners.clear();}
+        if(points==lowest)winners<<playerLabel(p);
+    }
+    QString names=winners.size()>1?winners.mid(0,winners.size()-1).join(", ")+" and "+winners.back():winners.front();
+    QString outcome=g.players()==1?"finished":winners.size()>1?"tied for first in":"won";
+    return QString("%1 %2 %3 with %4 %5.").arg(names,outcome,match?"the match":QString("round %1").arg(s.hole)).arg(lowest).arg(match?"total points":"points");
 }
 int Window::seatOrientation(int player) const {
     int me=std::clamp(net.localSeat(),0,g.players()-1);
@@ -227,21 +241,22 @@ void Window::updateUi() {
     if(s.phase==Phase::Opening && human) { statusTitle->setText("Seven up. One face down."); instruction->setText(QString("Turn %1 more of your cards face up. Your eighth card stays face down.").arg(g.hidden(me)-1)); }
     else if(over) {
         statusTitle->setText(s.phase==Phase::MatchOver?"Match complete":"Round complete");
-        instruction->setText(QString("You scored %1 this round%2. Lowest total wins.").arg(score.total).arg(score.bonus?QString(" including a %1 matching bonus").arg(score.bonus):""));
+        const bool match=s.phase==Phase::MatchOver;
+        QString yourScoreText=match?QString("Your final total: %1 points.").arg(g.total(me)):
+            QString("You scored %1 this round%2.").arg(score.total).arg(score.bonus?QString(" including a %1 matching bonus").arg(score.bonus):"");
+        instruction->setText(winnerMessage(match)+"\n"+yourScoreText);
     } else if(!human) { statusTitle->setText(QString("%1 is playing").arg(playerLabel(s.current))); instruction->setText(s.phase==Phase::Opening?"Turning seven cards face up…":s.phase==Phase::Place?"Choosing where to play the drawn card…":"Considering the table…"); }
     else if(s.phase==Phase::Draw) { statusTitle->setText("Your turn"); instruction->setText("Draw or take the discard to keep playing, or flip your final card to end the round."); }
     else if(s.phase==Phase::Place) { statusTitle->setText(QString("You drew %1").arg(value(s.held))); instruction->setText(s.fromDiscard?"Replace any face-up card, or replace your final face-down card to end the round.":"Replace a face-up card, discard and continue, or replace your final face-down card to end the round for everyone."); }
-    QStringList leaders; int low=100000;
-    for(int p=0;p<g.players();++p) low=std::min(low,g.total(p));
     QStringList lines;
-    for(int p=0;p<g.players();++p) { lines<<QString("%1 <b>%2</b>").arg(playerLabel(p).toHtmlEscaped()).arg(g.total(p)); if(g.total(p)==low) leaders<<playerLabel(p).toHtmlEscaped(); }
+    for(int p=0;p<g.players();++p) lines<<QString("%1 <b>%2</b>").arg(playerLabel(p).toHtmlEscaped()).arg(g.total(p));
     QString totalText; for(int i=0;i<lines.size();++i) { if(i) totalText+=(i%2==0?"<br>":" &nbsp; · &nbsp; "); totalText+=lines[i]; } totals->setText(totalText);
     for(int r=0;r<s.holes;++r) for(int c=0;c<g.players()+1;++c) {
         auto *item=scoreTable->item(r,c); if(!item) { item=new QTableWidgetItem; item->setTextAlignment(Qt::AlignCenter); scoreTable->setItem(r,c,item); }
         item->setText(c==0?QString::number(r+1):r<int(s.scores.size())?QString::number(s.scores[r][c-1]):"—");
         item->setBackground(r==s.hole-1?QColor("#2b5141"):QColor("#16352f"));
     }
-    result->setText(s.phase==Phase::MatchOver?QString("%1 %2 with %3 points.").arg(leaders.join(" and ")).arg(leaders.size()>1?"tie":"wins").arg(low):QString("%1 rounds · Lowest total wins").arg(s.holes));
+    result->setText(s.phase==Phase::MatchOver?winnerMessage(true):QString("%1 rounds · Lowest total wins").arg(s.holes));
     lastMove->setText(s.message);
     connectionLabel->setVisible(net.online());connectionButton->setVisible(net.online());connectionLabel->setText(net.status());
     roundsAction->setEnabled(net.mode()!=NetworkSession::Mode::Client);
