@@ -1,0 +1,20 @@
+Turnover Golf 1.0.6 verification
+
+Native Qt 6.11.2 / C++17 release build: passed
+CTest: 2 of 2 suites passed
+Totals: 31 passed, 0 failed, 0 skipped, 0 blacklisted, 8507ms
+Totals: 11 passed, 0 failed, 0 skipped, 0 blacklisted, 10365ms
+
+Verified Settings → Players selects 1–4 total players including the local player, with solo practice and per-seat computer/online-human roles. Native setup tested with a host, one guest and two computers.
+
+Verified two-, three- and four-player compass arrangements. Local hand always south; north rotates 180 degrees, west 90 degrees, east 270 degrees. Card pair positions rotate with the whole hand. Verified online guest orientation. Visible table labels show player names and scores without compass-direction words; all two-, three- and four-player tables fit without scrolling at the native desktop font.
+
+Verified flipping the original final card without drawing for every player, including an online human: no stock or discard changes, every player reveals, and scores synchronize. Draw-and-replace finishing remains supported.
+
+Includes 48 complete nine-round AI matches. Each voluntary AI finish was at most 6 points and followed at least six completed turns. AI can safely flip without drawing using revealed information only. Includes scoring, matching bonuses, deck recycling, card conservation and save/resume.
+
+TCP tested on localhost with mixed tables, invalid-request rejection, masked face-down values, disconnect/reconnect and synchronized round settings. Connections between separate internet locations were not tested.
+
+Native KDE visual checks completed with the user desktop font. No installation performed.
+
+Repository preparation: clean exported source tree configured and built successfully, with both CTest suites passing. Verified the launcher before and after building, including invocation from a different directory. BUILD_TESTING=OFF configures without Qt Test or test targets. Desktop metadata validation and shell syntax checks passed. Existing GPLv3 license and master branch history preserved. Compiled binaries, build trees, and personal saves are ignored by Git.
