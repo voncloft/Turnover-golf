@@ -63,6 +63,12 @@ The commands build and test locally without installing anything. Tests use Qt's 
 
 Offline play needs no network. Online play uses direct TCP connections through Qt Network; no web runtime, account, or relay service is used.
 
+## Scratchpkg recipe
+
+`spkgbuild` packages version 1.0.6 from the published source commit `b1645fee17189526efea940eb9feeab3a87a80f7`. It declares `cmake`, `ninja`, and `qt6` dependencies, builds without the test targets, and stages the executable, KDE desktop entry, icon, license, and README under `$PKG/usr`. `.checksums` contains the matching source archive checksum in Scratchpkg's format.
+
+Use the recipe with your normal Scratchpkg workflow. It requires a nonempty `$PKG` staging directory and does not install directly onto the running system. When updating the packaged version, update the version, source commit, and checksum together.
+
 ## License
 
 The repository includes the GNU General Public License, version 3. See [LICENSE](LICENSE).
