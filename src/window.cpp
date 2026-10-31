@@ -69,7 +69,7 @@ void Window::buildUi() {
     connect(fast,&QAction::toggled,this,[this](bool on){ if(persistence) QSettings().setValue("fast",on); aiTimer.setInterval(on?180:650); });
     auto *help=menuBar()->addMenu("&Help");
     help->addAction("&How to play",QKeySequence::HelpContents,this,&Window::showRules);
-    help->addAction("&About Turnover Golf",this,[this]{ QMessageBox::about(this,"About Turnover Golf",QString("<h2>Turnover Golf %1</h2><p>A native Qt game for KDE, using Play Nine card values and scoring, with your house rules.</p><p>Original card artwork. Choose 1–4 total players, including you. Other seats can be computers or online humans.</p><p>Seven cards start face up. Flip or replace your final card to end the round; everyone reveals together.</p>").arg(GOLF_VERSION)); });
+    help->addAction("&About Turnover Golf",this,[this]{ QMessageBox::about(this,"About Turnover Golf",QString("<h2>Turnover Golf %1</h2><p>A native Qt game for KDE, using Play Nine card values and scoring, with your house rules.</p><p>Original card artwork. Choose 2–4 total players, including you. Other seats can be computers or online humans.</p><p>Seven cards start face up. Flip or replace your final card to end the round; everyone reveals together.</p>").arg(GOLF_VERSION)); });
     auto *root=new QWidget; root->setObjectName("surface"); auto *outer=new QVBoxLayout(root); outer->setContentsMargins(24,15,24,16); outer->setSpacing(14);
     auto *top=new QHBoxLayout;
     auto *brand=new QVBoxLayout; brand->setSpacing(0); brand->addWidget(label("TURNOVER GOLF","brand")); brand->addWidget(label("Eight cards. Lowest score wins.","subtitle")); top->addLayout(brand); top->addStretch();
@@ -165,7 +165,7 @@ QString Window::winnerMessage(bool match) const {
         if(points==lowest)winners<<playerLabel(p);
     }
     QString names=winners.size()>1?winners.mid(0,winners.size()-1).join(", ")+" and "+winners.back():winners.front();
-    QString outcome=g.players()==1?"finished":winners.size()>1?"tied for first in":"won";
+    QString outcome=winners.size()>1?"tied for first in":"won";
     return QString("%1 %2 %3 with %4 %5.").arg(names,outcome,match?"the match":QString("round %1").arg(s.hole)).arg(lowest).arg(match?"total points":"points");
 }
 int Window::seatOrientation(int player) const {
@@ -209,7 +209,7 @@ void Window::updateUi() {
     const int me=std::clamp(net.localSeat(),0,g.players()-1);
     const auto &s=g.state(); bool human=net.canAct(), over=s.phase==Phase::HoleOver || s.phase==Phase::MatchOver;
     heading->setText(QString("ROUND %1 / %2").arg(s.hole).arg(s.holes));
-    findChild<QLabel *>("subtitle")->setText(QString("Eight cards · %1 · Lowest score wins").arg(g.players()==1?"Solo":QString("%1 players").arg(g.players())));
+    findChild<QLabel *>("subtitle")->setText(QString("Eight cards · %1 players · Lowest score wins").arg(g.players()));
     for(int p=0;p<g.players();++p) {
         for(int i=0;i<8;++i) {
             int partner=(i+4)%8, v=g.visibleValue(p,i);
@@ -313,7 +313,7 @@ void Window::newGame() {
     auto *create=new QWidget;auto *createLayout=new QVBoxLayout(create);createLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);createLayout->setSpacing(14);addPage(create,"Set up game");
     auto *intro=new QLabel("You are player 1. Choose who fills each other seat.");intro->setWordWrap(true);createLayout->addWidget(intro);
     auto *form=new QFormLayout;form->setRowWrapPolicy(QFormLayout::WrapLongRows);form->setVerticalSpacing(12);createLayout->addLayout(form);
-    auto *count=new QComboBox;count->setObjectName("playerCount");count->addItem("1 — just you (solo)",0);for(int n=2;n<=4;++n)count->addItem(QString("%1 — you + %2 %3").arg(n).arg(n-1).arg(n==2?"player":"players"),n-1);count->setCurrentIndex(std::clamp(g.state().opponents,0,3));form->addRow("Total players",count);
+    auto *count=new QComboBox;count->setObjectName("playerCount");for(int n=2;n<=4;++n)count->addItem(QString("%1 — you + %2 %3").arg(n).arg(n-1).arg(n==2?"player":"players"),n-1);count->setCurrentIndex(count->findData(std::clamp(g.state().opponents,1,3)));form->addRow("Total players",count);
     auto *rounds=new QSpinBox;rounds->setObjectName("roundCount");rounds->setRange(1,99);rounds->setValue(g.state().holes);form->addRow("Rounds",rounds);
     std::array<QComboBox *,3> seats;std::array<QLabel *,3> seatLabels;
     for(int i=0;i<3;++i){seats[i]=new QComboBox;seats[i]->setObjectName(QString("seatType%1").arg(i+1));seats[i]->addItem("Computer",false);seats[i]->addItem("Online human",true);if(net.online() && i<g.state().opponents && !net.isComputer(i+1))seats[i]->setCurrentIndex(1);seatLabels[i]=new QLabel(QString("Player %1").arg(i+2));form->addRow(seatLabels[i],seats[i]);}
@@ -371,7 +371,7 @@ void Window::showConnection() {
 void Window::showRules() {
     bool resume=aiTimer.isActive(); aiTimer.stop();
     QDialog dialog(this); dialog.setWindowTitle("How to play — Turnover Golf"); dialog.resize(650,620); auto *v=new QVBoxLayout(&dialog); auto *text=new QTextEdit; text->setReadOnly(true);
-    text->setHtml(R"(<h1>Eight cards. Custom rounds.</h1><p>Finish with the lowest total score. Choose 1–99 rounds and 1–4 total players, including you, in Settings → Players or Players / New game. One player is solo practice. You can also change the round count in Settings → Rounds; completed scores stay intact. In online games, the host sets the round count. Each other seat can be a computer or an online human. You always sit south; opponents occupy north for two players, north and west for three, and north, west and east for four. Cards and rows face their seat. Each hand has two rows of four cards.</p>
+    text->setHtml(R"(<h1>Eight cards. Custom rounds.</h1><p>Finish with the lowest total score. Choose 1–99 rounds and 2–4 total players, including you, in Settings → Players or Players / New game. You can also change the round count in Settings → Rounds; completed scores stay intact. In online games, the host sets the round count. Each other seat can be a computer or an online human. You always sit south; opponents occupy north for two players, north and west for three, and north, west and east for four. Cards and rows face their seat. Each hand has two rows of four cards.</p>
       <h2>Start and take a turn</h2><p>All eight cards are dealt face down. Turn seven face up before the first draw, leaving the eighth card face down in its place. Computers do the same. Draw from the deck or the discard pile. Replace any face-up card with your draw; the old card goes on the discard pile.</p><p>A card taken from the discard pile must be played. A card drawn from the deck can instead be discarded to end your turn and keep playing.</p>
       <h2>The final reveal</h2><p><b>On your turn, you may flip your final face-down card without drawing.</b> Click the card or choose <b>Flip final card · end round</b>. It keeps its original value. Everyone else immediately turns their remaining face-down card face up and scores, with no extra turns.</p><p>You can instead draw from either pile and replace your final card with that draw to end the round. The replaced card goes to the discard pile. Once you draw, resolve that draw by replacing a card or discarding a deck draw. Both ways of ending apply to every human and computer.</p>
       <h2>Scoring</h2><p>Cards have their printed value: 0–12, or −5. There are eight of each 0–12 and four −5 cards (108 total).</p><ul><li>Two equal cards in the same column score 0.</li><li>Two −5 cards keep their values: −10.</li><li>Two, three, or four completed pairs of the <b>same number</b> earn an extra −10, −15, or −20 bonus.</li><li>Four −5 cards arranged as two vertical pairs score −30.</li><li>Columns do not need to be adjacent. Side-by-side cards alone do not cancel.</li></ul>

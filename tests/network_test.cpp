@@ -197,7 +197,7 @@ private slots:
         QTcpServer reserve;QVERIFY(reserve.listen(QHostAddress::LocalHost,0));int port=reserve.serverPort();reserve.close();
         QTimer::singleShot(50,[&]{
             auto *d=qobject_cast<QDialog *>(QApplication::activeModalWidget());QVERIFY(d);
-            auto *count=d->findChild<QComboBox *>("playerCount");count->setCurrentIndex(3);
+            auto *count=d->findChild<QComboBox *>("playerCount");count->setCurrentIndex(count->findData(3));
             auto *seat=d->findChild<QComboBox *>("seatType1");QVERIFY(seat);QCOMPARE(seat->itemText(1),QString("Online human"));seat->setCurrentIndex(1);
             d->findChild<QSpinBox *>("hostPort")->setValue(port);d->findChild<QSpinBox *>("roundCount")->setValue(3);
             d->findChild<QLineEdit *>("hostName")->setText("Host");

@@ -56,6 +56,27 @@ private slots:
             QVERIFY(!g.open(7)); QVERIFY(conserved(g));
         }
     }
+    void gamesAlwaysHaveAnOpponent() {
+        Game g(77);g.newMatch(0,3);
+        QCOMPARE(g.players(),2);QCOMPARE(g.state().holes,3);QVERIFY(conserved(g));
+        for(int i=0;i<7;++i)QVERIFY(g.open(i));
+        QCOMPARE(g.state().current,1);QCOMPARE(g.state().phase,Phase::Opening);
+
+        QSettings config;const auto previous=config.value("opponents");
+        config.setValue("opponents",0);
+        Window w(false);
+        if(previous.isValid())config.setValue("opponents",previous);else config.remove("opponents");
+        QCOMPARE(w.game().players(),2);QVERIFY(w.session().isComputer(1));
+
+        // A valid legacy solo save must not replace the new two-player match.
+        Game solo(77);
+        for(auto slot:solo.s.hands.back())solo.s.deck.push_back(slot.card);
+        solo.s.opponents=0;solo.s.hands.resize(1);solo.s.turns.resize(1);solo.s.names={"You"};
+        QVERIFY(conserved(solo));
+        const auto before=g.save();
+        QVERIFY(!g.restore(solo.save()));QCOMPARE(g.save(),before);
+        QVERIFY(!g.restorePublicView(solo.publicView(0),0));QCOMPARE(g.save(),before);
+    }
     void scoring_data() {
         QTest::addColumn<QList<int>>("cards"); QTest::addColumn<int>("expected"); QTest::addColumn<int>("bonus");
         QTest::newRow("unmatched") << QList<int>{1,2,3,4,5,6,7,8} << 36 << 0;
@@ -152,7 +173,7 @@ private slots:
         }
     }
     void flippingFinalCardEndsWithoutDrawingForEverySeat() {
-        for(int opponents=0;opponents<=3;++opponents)for(int p=0;p<=opponents;++p) {
+        for(int opponents=1;opponents<=3;++opponents)for(int p=0;p<=opponents;++p) {
             Game g(91);g.newMatch(opponents,3);start(g);g.s.current=p;
             const auto deck=g.s.deck,discards=g.s.discards;const auto hands=g.s.hands;
             QVERIFY(g.finishHole());QCOMPARE(g.s.endingBy,p);QCOMPARE(g.s.phase,Phase::HoleOver);
@@ -262,11 +283,11 @@ private slots:
         QTest::mouseClick(w.findChild<QPushButton *>("nextHole"),Qt::LeftButton); QCOMPARE(w.game().state().phase,Phase::Opening); QCOMPARE(w.game().hidden(0),8);
     }
     void uiPlayerSelectionAndCompassSeats() {
-        for(int players=1;players<=4;++players) {
+        for(int players=2;players<=4;++players) {
             Window w(false);w.show();
             QTimer::singleShot(50,[&]{
                 auto *dialog=qobject_cast<QDialog *>(QApplication::activeModalWidget());QVERIFY(dialog);
-                auto *count=dialog->findChild<QComboBox *>("playerCount");QVERIFY(count);QCOMPARE(count->count(),4);count->setCurrentIndex(players-1);
+                auto *count=dialog->findChild<QComboBox *>("playerCount");QVERIFY(count);QCOMPARE(count->count(),3);QCOMPARE(count->findData(0),-1);count->setCurrentIndex(count->findData(players-1));
                 auto *rounds=dialog->findChild<QSpinBox *>("roundCount");QVERIFY(rounds);rounds->setValue(7);
                 QTest::mouseClick(dialog->findChild<QDialogButtonBox *>()->button(QDialogButtonBox::Ok),Qt::LeftButton);
             });

@@ -12,7 +12,7 @@ Game::Game(unsigned seed) : rng(seed) { newMatch(); }
 QString Game::playerName(int p) { return p == 0 ? QStringLiteral("You") : QStringLiteral("Computer %1").arg(p); }
 void Game::newMatch(int opponents, int holes) {
     s = State{};
-    s.opponents = std::clamp(opponents, 0, 4); // Retain support for older five-seat saves.
+    s.opponents = std::clamp(opponents, 1, 4); // Retain support for older five-seat saves.
     s.holes = std::clamp(holes, 1, 99);
     for(int p=0;p<players();++p) s.names.append(playerName(p));
     deal();
@@ -266,7 +266,7 @@ bool Game::restore(const QJsonObject &o) {
     n.opponents=o["opponents"].toInt(); n.holes=o["holes"].toInt(); n.hole=o["hole"].toInt();
     n.current=o["current"].toInt(-1); n.held=o["held"].toInt(-2); n.endingBy=o["endingBy"].toInt(-3);
     n.fromDiscard=o["fromDiscard"].toBool(); int phase=o["phase"].toInt(-1);
-    if(n.opponents<0 || n.opponents>4 || (n.holes<1 || n.holes>99) || n.hole<1 || n.hole>n.holes || n.current<0 || n.current>n.opponents || phase<0 || phase>5 || phase==int(Phase::Reveal) || n.held< -1 || n.held>107 || n.endingBy< -2 || n.endingBy>n.opponents) return false;
+    if(n.opponents<1 || n.opponents>4 || (n.holes<1 || n.holes>99) || n.hole<1 || n.hole>n.holes || n.current<0 || n.current>n.opponents || phase<0 || phase>5 || phase==int(Phase::Reveal) || n.held< -1 || n.held>107 || n.endingBy< -2 || n.endingBy>n.opponents) return false;
     n.phase=Phase(phase); n.message=o["message"].toString();
     for(auto v:o["names"].toArray()) n.names.append(v.toString().left(24));
     if(n.names.size()!=n.opponents+1) { n.names.clear(); for(int p=0;p<=n.opponents;++p)n.names.append(playerName(p)); }
@@ -318,7 +318,7 @@ QJsonObject Game::publicView(int viewer) const {
 }
 bool Game::restorePublicView(const QJsonObject &o,int viewer) {
     auto integer=[](QJsonValue v,int low,int high){ return v.isDouble() && v.toDouble()==v.toInt(low-1) && v.toInt()>=low && v.toInt()<=high; };
-    if(!integer(o["players"],1,5) || !integer(o["rounds"],1,99) || !integer(o["round"],1,o["rounds"].toInt()) || !integer(o["current"],0,o["players"].toInt()-1) || !integer(o["phase"],0,5) || o["phase"].toInt()==3 || !integer(o["stockCount"],0,108) || !integer(o["discardCount"],0,108))return false;
+    if(!integer(o["players"],2,5) || !integer(o["rounds"],1,99) || !integer(o["round"],1,o["rounds"].toInt()) || !integer(o["current"],0,o["players"].toInt()-1) || !integer(o["phase"],0,5) || o["phase"].toInt()==3 || !integer(o["stockCount"],0,108) || !integer(o["discardCount"],0,108))return false;
     int players=o["players"].toInt(); if(viewer<0 || viewer>=players)return false;
     State n; n.opponents=players-1; n.holes=o["rounds"].toInt(); n.hole=o["round"].toInt(); n.current=o["current"].toInt(); n.phase=Phase(o["phase"].toInt()); n.fromDiscard=o["fromDiscard"].toBool();
     auto validValue=[&](QJsonValue v){return v.isNull() || integer(v,0,12) || (v.isDouble() && v.toDouble()==-5);};

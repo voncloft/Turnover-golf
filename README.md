@@ -1,11 +1,11 @@
-# Turnover Golf 1.0.7
+# Turnover Golf 1.0.8
 
-A native C++/Qt 6 Widgets card game for KDE. Choose **1–4 total players, including you**. Play solo, against computers, or with a mix of online humans and computers.
+A native C++/Qt 6 Widgets card game for KDE. Choose **2–4 total players, including you**. Play against computers or with a mix of online humans and computers.
 
 ## Play
 
 Build from source using the commands below, then run `./run-test.sh` from this folder. No installation is required. The launcher uses `build/turnover-golf`, or the executable beside it in a local test bundle, and keeps saves and preferences in `test-profile/`. Compiled binaries and personal saves are excluded from Git.
-Choose **Settings → Players…** or **Players / New game** to set the **total player count** and each other seat to **Computer** or **Online human**. For example, four players can be you plus three computers, or you plus one online human and two computers. Three players can be you plus two computers. One player is solo practice. Set **Rounds** to any number from 1 to 99 (default 9). Each completed hand of eight cards is one round; cumulative scores determine the match winner. **Settings → Rounds…** also changes the current match total and saves it as the default for future games. Completed scores are kept; the total cannot be lower than the current round. The host controls this setting for online matches.
+Choose **Settings → Players…** or **Players / New game** to set the **total player count** and each other seat to **Computer** or **Online human**. For example, four players can be you plus three computers, or you plus one online human and two computers. Three players can be you plus two computers. Set **Rounds** to any number from 1 to 99 (default 9). Each completed hand of eight cards is one round; cumulative scores determine the match winner. **Settings → Rounds…** also changes the current match total and saves it as the default for future games. Completed scores are kept; the total cannot be lower than the current round. The host controls this setting for online matches.
 
 This version uses the requested house rules:
 
@@ -65,13 +65,17 @@ Offline play needs no network. Online play uses direct TCP connections through Q
 
 ## Scratchpkg recipe
 
-The package recipe and source checksum are maintained in [Voncloft-OS-dev](https://github.com/voncloft/Voncloft-OS-dev), under `kde-apps/turnover-golf/`. The recipe pins the published 1.0.6 source commit and stages all packaged files under `$PKG/usr`.
+The package recipe and source checksum are maintained in [Voncloft-OS-dev](https://github.com/voncloft/Voncloft-OS-dev), under `kde-apps/turnover-golf/`. The recipe pins a published source commit and stages all packaged files under `$PKG/usr`. Its updater override tracks new Git commits and reads the application version from the same commit.
 
 ## License
 
 The repository includes the GNU General Public License, version 3. See [LICENSE](LICENSE).
 
 ## Changelog
+
+### 1.0.8
+
+Removed solo play. Setup offers 2–4 total players, with at least one computer or online human opponent. Old solo preferences default to a computer opponent, and old solo saves start a fresh match with an opponent. Updated the rules, About text, and desktop description.
 
 ### 1.0.7
 
